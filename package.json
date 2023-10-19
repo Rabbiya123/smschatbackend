@@ -1,0 +1,30 @@
+{
+  "name": "smschatbackend",
+  "version": "1.0.0",
+  "description": "hello it my fist line",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rabbiya123/smschatbackend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Rabbiya123/smschatbackend/issues"
+  },
+  "homepage": "https://github.com/Rabbiya123/smschatbackend#readme",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.6.3",
+    "redis": "^4.6.10",
+    "redis-commander": "^0.6.3",
+    "socket.io": "^4.7.2"
+  }
+}
