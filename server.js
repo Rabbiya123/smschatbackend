@@ -13,11 +13,68 @@ const secretKey1 = "auth-token";
 const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(cors());
+
+mongoose.connect("mongodb://localhost:27017/agentDatabase", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
 // making connection with angular
 const io = Server(server, {
   cors: {
     origin: ["http://localhost:4200"],
   },
+});
+
+const userSchema = new mongoose.Schema({
+  username: String,
+  email: String,
+  password: String,
+  createdAt: { type: Date, default: Date.now },
+});
+const User = mongoose.model("agentSignupData", userSchema);
+
+app.use(cors());
+
+io.on("connection", async (socket) => {
+  console.log("a user is connected");
+  // Handle user messages and forwarding to agents.
+  socket.on("userMessage", (message) => {
+    console.log("received user messsages", message);
+    // Broadcast the message to all connected agents.
+    socket.broadcast.emit("agentMessage", message);
+  });
+
+  socket.on("agentLogin", async (credentials) => {
+    try {
+      const agent = await User.findOne({
+        username: credentials.username,
+        password: credentials.password,
+      });
+
+      if (agent) {
+        socket.join("agents");
+
+        socket.emit("agentLoginSuccess");
+        console.log("agent join the room");
+      } else {
+        socket.emit("agentLoginFail");
+      }
+    } catch (err) {
+      console.error("Error while querying the database:", err);
+      socket.emit("agentLoginFail");
+    }
+  });
+
+  socket.on("agentMessage", async (message) => {
+    console.log("Received message from client:", message);
+    // Broadcast the message to all connected users.
+    socket.broadcast.emit("userMessage", message);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 // set port
 server.listen(3000, () => {
@@ -27,18 +84,6 @@ server.listen(3000, () => {
 app.get("/", function (req, res) {
   res.send("OK");
 });
-mongoose.connect("mongodb://localhost:27017/agentDatabase", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-const userSchema = new mongoose.Schema({
-  username: String,
-  email: String,
-  password: String,
-  createdAt: { type: Date, default: Date.now },
-});
-
-const User = mongoose.model("agentSignupData", userSchema);
 
 app.post("/signup", async (req, res) => {
   try {
