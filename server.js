@@ -32,16 +32,23 @@ const userSchema = new mongoose.Schema({
   password: String,
   createdAt: { type: Date, default: Date.now },
 });
+
 const User = mongoose.model("agentSignupData", userSchema);
 
+const agentMessageSchema = new mongoose.Schema({
+  agentName: String,
+  agentMessage: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
+const mymessage = mongoose.model("agentMessages", agentMessageSchema);
 app.use(cors());
 
 io.on("connection", async (socket) => {
   console.log("a user is connected");
-  // Handle user messages and forwarding to agents.
-  socket.on("userMessage", (message) => {
-    console.log("received user messsages", message);
-    // Broadcast the message to all connected agents.
+
+  socket.on("userMessage", async (message) => {
+    console.log("received messsage from end-user", message);
     socket.broadcast.emit("agentMessage", message);
   });
 
@@ -67,9 +74,18 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("agentMessage", async (message) => {
-    console.log("Received message from client:", message);
-    // Broadcast the message to all connected users.
+    console.log("Received message from agent:", message);
     socket.broadcast.emit("userMessage", message);
+    try {
+      const messageAgent = new mymessage({
+        agentName: message.agentName,
+        agentMessage: message.text,
+      });
+
+      await messageAgent.save();
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
   });
 
   socket.on("disconnect", () => {
@@ -134,5 +150,14 @@ app.post("/api/login", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: "An error occurred" });
+  }
+});
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "An error occurred while fetching users" });
   }
 });
